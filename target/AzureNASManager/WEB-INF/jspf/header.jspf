@@ -1,0 +1,41 @@
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><c:out value="${titulo}"/> · AzureNAS Manager</title>
+    <link rel="stylesheet" href="${ctx}/css/estilos.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">&#9729; AzureNAS Manager</div>
+    <nav>
+        <a href="${ctx}/dashboard">Inicio</a>
+        <a href="${ctx}/recursos">Recursos</a>
+        <a href="${ctx}/transferencias">Transferencias</a>
+        <c:if test="${sessionScope.usuario.admin}">
+            <a href="${ctx}/UsuarioServlet">Usuarios</a>
+            <a href="${ctx}/areas">&Aacute;reas</a>
+            <a href="${ctx}/cuentas">Cuentas</a>
+            <a href="${ctx}/auditoria">Auditor&iacute;a</a>
+            <a href="${ctx}/powershell">PowerShell</a>
+        </c:if>
+    </nav>
+    <div class="user">
+        <c:out value="${sessionScope.usuario.nombreCompleto}"/> (<c:out value="${sessionScope.usuario.rol}"/>)
+        <a href="${ctx}/logout">Salir</a>
+    </div>
+</header>
+<main class="contenedor">
+    <c:if test="${not empty sessionScope.mensaje}">
+        <div class="alerta ok"><c:out value="${sessionScope.mensaje}"/></div>
+        <c:remove var="mensaje" scope="session"/>
+    </c:if>
+    <c:if test="${not empty sessionScope.error}">
+        <div class="alerta error"><c:out value="${sessionScope.error}"/></div>
+        <c:remove var="error" scope="session"/>
+    </c:if>
+    <c:if test="${not empty requestScope.error}">
+        <div class="alerta error"><c:out value="${requestScope.error}"/></div>
+    </c:if>
