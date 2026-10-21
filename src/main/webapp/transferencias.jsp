@@ -3,6 +3,7 @@
 <c:set var="titulo" value="Transferencias"/>
 <%@ include file="/WEB-INF/jspf/header.jspf" %>
 <h1>Transferencias</h1>
+<p><a class="boton" href="${ctx}/reportes?tipo=transferencias">Exportar a Excel (.xlsx)</a></p>
 <div class="tarjeta">
     <h2>Subir archivo</h2>
     <form class="fila" method="post" enctype="multipart/form-data"

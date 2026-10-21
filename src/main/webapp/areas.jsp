@@ -3,6 +3,7 @@
 <c:set var="titulo" value="Áreas"/>
 <%@ include file="/WEB-INF/jspf/header.jspf" %>
 <h1>&Aacute;reas</h1>
+<p><a class="boton" href="${ctx}/reportes?tipo=areas">Exportar uso por &aacute;rea a Excel (.xlsx)</a></p>
 <div class="tarjeta">
     <h2>Nueva &aacute;rea</h2>
     <form class="fila" method="post" action="${ctx}/areas">

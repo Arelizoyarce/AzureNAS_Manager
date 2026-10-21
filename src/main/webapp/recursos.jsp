@@ -3,6 +3,9 @@
 <c:set var="titulo" value="Recursos"/>
 <%@ include file="/WEB-INF/jspf/header.jspf" %>
 <h1>Recursos</h1>
+<p>
+    <a class="boton" href="<c:url value='/reportes'><c:param name='tipo' value='recursos'/><c:param name='q' value='${q}'/><c:param name='tr' value='${tipoSel}'/></c:url>">Exportar a Excel (.xlsx)</a>
+</p>
 <div class="tarjeta">
     <h2>B&uacute;squeda avanzada</h2>
     <form class="fila" method="get" action="${ctx}/recursos">

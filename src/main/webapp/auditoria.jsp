@@ -3,6 +3,7 @@
 <c:set var="titulo" value="Auditoría"/>
 <%@ include file="/WEB-INF/jspf/header.jspf" %>
 <h1>Registro de auditor&iacute;a</h1>
+<p><a class="boton" href="${ctx}/reportes?tipo=auditoria">Exportar a Excel (.xlsx)</a></p>
 <div class="tarjeta">
     <p>&Uacute;ltimos 200 eventos. La columna <b>Integridad</b> recalcula el hash SHA-256 de cada registro para detectar alteraciones.</p>
     <div class="tabla-scroll"><table>
