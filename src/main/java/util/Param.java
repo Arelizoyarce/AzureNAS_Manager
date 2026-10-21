@@ -1,24 +1,30 @@
 package util;
 
-/** Lectura segura de parametros de formulario. */
+import org.apache.commons.lang3.StringUtils;
+
+/** Lectura segura de parametros de formulario (usa Apache Commons Lang3). */
 public final class Param {
 
     private Param() {
     }
 
     public static Integer entero(String s) {
+        String limpio = StringUtils.trimToNull(s);
+        if (limpio == null) {
+            return null;
+        }
         try {
-            return s == null || s.trim().isEmpty() ? null : Integer.valueOf(s.trim());
+            return Integer.valueOf(limpio);
         } catch (NumberFormatException e) {
             return null;
         }
     }
 
     public static boolean marcado(String s) {
-        return s != null && (s.equals("on") || s.equals("true") || s.equals("1"));
+        return StringUtils.equalsAny(s, "on", "true", "1");
     }
 
     public static String texto(String s) {
-        return s == null ? "" : s.trim();
+        return StringUtils.trimToEmpty(s);
     }
 }
