@@ -11,11 +11,14 @@ import modelo.ResultadoOperacion;
 import modelo.TipoOperacion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.LogUtil;
 import util.PasswordUtil;
 
 public class AuditoriaServicio {
 
     private static final Logger logger = LoggerFactory.getLogger(AuditoriaServicio.class);
+    /** Logger aparte (archivo operaciones.log, ver logback.xml) para el monitoreo de la aplicacion. */
+    private static final Logger operaciones = LoggerFactory.getLogger("operaciones");
     private final IAuditoriaDAO dao;
 
     public AuditoriaServicio() {
@@ -47,6 +50,13 @@ public class AuditoriaServicio {
             dao.insertar(r);
         } catch (DAOException e) {
             logger.error("No se pudo registrar auditoria", e);
+        }
+        if (resultado == ResultadoOperacion.EXITO) {
+            operaciones.info("{} usuario={} recurso={} ruta={} ip={} - {}", op, usuarioId, recursoId,
+                    LogUtil.limpiar(ruta), ip, LogUtil.limpiar(detalle));
+        } else {
+            operaciones.warn("{} {} usuario={} recurso={} ruta={} ip={} - {}", op, resultado, usuarioId, recursoId,
+                    LogUtil.limpiar(ruta), ip, LogUtil.limpiar(detalle));
         }
     }
 

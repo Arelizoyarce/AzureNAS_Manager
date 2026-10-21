@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import modelo.Recurso;
+import org.apache.commons.io.FileUtils;
 
 /**
  * Azure Storage SIMULADO: cada recurso es una carpeta local
@@ -126,8 +128,11 @@ public class AlmacenamientoSimuladoClient implements IAlmacenamientoClient {
         if (!Files.isDirectory(b)) {
             return 0L;
         }
-        try (Stream<Path> s = Files.walk(b)) {
-            return s.filter(Files::isRegularFile).mapToLong(f -> f.toFile().length()).sum();
+        try {
+            // Apache Commons IO calcula el tamano total de la carpeta (incluye subcarpetas)
+            return FileUtils.sizeOfDirectory(b.toFile());
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
         }
     }
 }

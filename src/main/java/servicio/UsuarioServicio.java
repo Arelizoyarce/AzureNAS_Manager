@@ -1,15 +1,22 @@
 package servicio;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import dao.AreaDAO;
 import interfaces.IAreaDAO;
 import interfaces.INotificador;
 import interfaces.IUsuarioDAO;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import modelo.Area;
 import modelo.ResultadoOperacion;
 import modelo.RolUsuario;
 import modelo.TipoOperacion;
 import modelo.Usuario;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.PasswordUtil;
@@ -17,6 +24,17 @@ import util.PasswordUtil;
 public class UsuarioServicio {
 
     private static final Logger logger = LoggerFactory.getLogger(UsuarioServicio.class);
+
+    /** Cache (Guava) de las areas: cambian poco, asi se evita consultar la BD en cada pantalla. */
+    private static final String CLAVE_AREAS = "todas";
+    private static final LoadingCache<String, List<Area>> CACHE_AREAS = CacheBuilder.newBuilder()
+            .expireAfterWrite(60, TimeUnit.SECONDS)
+            .build(new CacheLoader<String, List<Area>>() {
+                @Override
+                public List<Area> load(String clave) {
+                    return ImmutableList.copyOf(new AreaDAO().listar());
+                }
+            });
 
     private final IUsuarioDAO usuarioDAO;
     private final IAreaDAO areaDAO = new AreaDAO();
@@ -30,7 +48,7 @@ public class UsuarioServicio {
 
     /** Valida credenciales y registra el intento en auditoria. */
     public Usuario autenticar(String username, String password, String ip) {
-        if (username == null || username.trim().isEmpty() || password == null || password.isEmpty()) {
+        if (StringUtils.isBlank(username) || StringUtils.isEmpty(password)) {
             throw new ServicioException("Ingresa usuario y contrasena");
         }
         Usuario u = usuarioDAO.buscarPorUsername(username.trim());
@@ -64,7 +82,14 @@ public class UsuarioServicio {
     }
 
     public List<Area> listarAreas() {
-        return areaDAO.listar();
+        try {
+            return CACHE_AREAS.getUnchecked(CLAVE_AREAS);
+        } catch (UncheckedExecutionException e) {
+            if (e.getCause() instanceof RuntimeException) {
+                throw (RuntimeException) e.getCause();
+            }
+            throw e;
+        }
     }
 
     public int contar() {
@@ -77,10 +102,10 @@ public class UsuarioServicio {
         if (username == null || !username.matches("[A-Za-z0-9._-]{3,50}")) {
             throw new ServicioException("El usuario debe tener 3-50 caracteres (letras, numeros, . _ -)");
         }
-        if (nombreCompleto == null || nombreCompleto.trim().isEmpty() || nombreCompleto.length() > 150) {
+        if (StringUtils.isBlank(nombreCompleto) || nombreCompleto.length() > 150) {
             throw new ServicioException("El nombre completo es obligatorio (max. 150)");
         }
-        if (password == null || password.length() < 8) {
+        if (StringUtils.length(password) < 8) {
             throw new ServicioException("La contrasena debe tener al menos 8 caracteres");
         }
         if (usuarioDAO.buscarPorUsername(username) != null) {
@@ -117,12 +142,13 @@ public class UsuarioServicio {
 
     public void crearArea(Usuario admin, String nombre, String ip) {
         exigirAdmin(admin);
-        if (nombre == null || nombre.trim().isEmpty() || nombre.length() > 100) {
+        if (StringUtils.isBlank(nombre) || nombre.length() > 100) {
             throw new ServicioException("El nombre del area es obligatorio (max. 100)");
         }
         Area a = new Area();
         a.setNombre(nombre.trim());
         int id = areaDAO.insertar(a);
+        CACHE_AREAS.invalidateAll();
         auditoria.registrar(admin.getId(), TipoOperacion.ADMINISTRACION, null, "area/" + id, null,
                 ResultadoOperacion.EXITO, ip, "Area creada: " + a.getNombre());
     }
