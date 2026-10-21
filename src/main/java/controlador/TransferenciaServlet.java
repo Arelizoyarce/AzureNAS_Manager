@@ -4,7 +4,6 @@ import dao.DAOException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
-import java.nio.file.Paths;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
@@ -14,6 +13,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 import modelo.Usuario;
 import notificaciones.NotificadorEmail;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import servicio.AlmacenamientoSimuladoClient;
@@ -64,8 +65,7 @@ public class TransferenciaServlet extends HttpServlet {
             if (id == null) {
                 throw new ServicioException("Recurso invalido");
             }
-            String nombre = ruta.replace('\\', '/');
-            nombre = nombre.substring(nombre.lastIndexOf('/') + 1);
+            String nombre = nombreSeguro(ruta);
             resp.setContentType("application/octet-stream");
             resp.setHeader("Content-Disposition", "attachment; filename*=UTF-8''"
                     + URLEncoder.encode(nombre, "UTF-8").replace("+", "%20"));
@@ -77,6 +77,11 @@ public class TransferenciaServlet extends HttpServlet {
                 resp.sendRedirect(req.getContextPath() + "/transferencias");
             }
         }
+    }
+
+    /** Solo el nombre del archivo (sin carpetas) y sin caracteres nulos. Usa Apache Commons IO y Lang3. */
+    private static String nombreSeguro(String ruta) {
+        return FilenameUtils.getName(StringUtils.remove(ruta, '\u0000'));
     }
 
     @Override
@@ -91,7 +96,10 @@ public class TransferenciaServlet extends HttpServlet {
                 if (recursoId == null || archivo == null || archivo.getSize() == 0) {
                     throw new ServicioException("Selecciona un recurso y un archivo");
                 }
-                String nombre = Paths.get(archivo.getSubmittedFileName()).getFileName().toString();
+                String nombre = nombreSeguro(archivo.getSubmittedFileName());
+                if (StringUtils.isBlank(nombre)) {
+                    throw new ServicioException("Nombre de archivo invalido");
+                }
                 try (InputStream in = archivo.getInputStream()) {
                     servicio.subir(u, recursoId, req.getParameter("carpeta"), nombre, in,
                             Param.marcado(req.getParameter("sobrescribir")), ip);

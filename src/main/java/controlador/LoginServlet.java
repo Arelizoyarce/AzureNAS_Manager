@@ -15,12 +15,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import servicio.ServicioException;
 import servicio.UsuarioServicio;
+import util.LimiteIntentos;
+import util.LogUtil;
 import util.Sesion;
 
 @WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
 public class LoginServlet extends HttpServlet {
 
     private static final Logger logger = LoggerFactory.getLogger(LoginServlet.class);
+    /** Logger de seguridad: escribe en seguridad.log (ver logback.xml). */
+    private static final Logger seguridad = LoggerFactory.getLogger("seguridad");
     private UsuarioServicio servicio;
 
     @Override
@@ -42,8 +46,24 @@ public class LoginServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String username = req.getParameter("username");
         String password = req.getParameter("password");
+        String ip = Sesion.ip(req);
+        String clave = LimiteIntentos.clave(ip, username);
+
+        // Guava: bloqueo temporal despues de varios intentos fallidos
+        if (LimiteIntentos.bloqueado(clave)) {
+            seguridad.warn("Inicio de sesion bloqueado por exceso de intentos: usuario={} ip={}",
+                    LogUtil.limpiar(username), ip);
+            req.setAttribute("error", "Demasiados intentos fallidos. Espera " + LimiteIntentos.MINUTOS_BLOQUEO
+                    + " minutos e intentalo de nuevo");
+            req.setAttribute("username", username);
+            req.getRequestDispatcher("/login.jsp").forward(req, resp);
+            return;
+        }
+
         try {
-            Usuario u = servicio.autenticar(username, password, Sesion.ip(req));
+            Usuario u = servicio.autenticar(username, password, ip);
+            LimiteIntentos.limpiar(clave);
+            seguridad.info("Inicio de sesion correcto: usuario={} ip={}", LogUtil.limpiar(u.getUsername()), ip);
             u.setPasswordHash(null);
             HttpSession vieja = req.getSession(false);
             if (vieja != null) {
@@ -52,6 +72,9 @@ public class LoginServlet extends HttpServlet {
             req.getSession(true).setAttribute(Sesion.USUARIO, u);
             resp.sendRedirect(req.getContextPath() + "/dashboard");
         } catch (ServicioException e) {
+            LimiteIntentos.registrarFallo(clave);
+            seguridad.warn("Inicio de sesion fallido ({}): usuario={} ip={}", e.getMessage(),
+                    LogUtil.limpiar(username), ip);
             req.setAttribute("error", e.getMessage());
             req.setAttribute("username", username);
             req.getRequestDispatcher("/login.jsp").forward(req, resp);
