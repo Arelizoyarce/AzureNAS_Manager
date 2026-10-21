@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <!-- Consola (Output de Tomcat / NetBeans) -->
     <appender name="CONSOLA" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
+
+    <!-- Log general de la aplicacion: ~/azurenas-logs/azurenas.log -->
     <appender name="ARCHIVO" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${user.home}/azurenas-logs/azurenas.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -15,6 +18,40 @@
             <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
+
+    <!-- Eventos de seguridad (inicios de sesion, bloqueos): ~/azurenas-logs/seguridad.log -->
+    <appender name="SEGURIDAD" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${user.home}/azurenas-logs/seguridad.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${user.home}/azurenas-logs/seguridad.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>90</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Operaciones de negocio (subidas, descargas, reportes, administracion): ~/azurenas-logs/operaciones.log -->
+    <appender name="OPERACIONES" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${user.home}/azurenas-logs/operaciones.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${user.home}/azurenas-logs/operaciones.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>90</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="seguridad" level="INFO" additivity="false">
+        <appender-ref ref="SEGURIDAD"/>
+        <appender-ref ref="CONSOLA"/>
+    </logger>
+    <logger name="operaciones" level="INFO" additivity="false">
+        <appender-ref ref="OPERACIONES"/>
+        <appender-ref ref="CONSOLA"/>
+    </logger>
+
     <root level="INFO">
         <appender-ref ref="CONSOLA"/>
         <appender-ref ref="ARCHIVO"/>
